@@ -1,0 +1,10 @@
+# Ignore raw SVHN dataset as too large for githubs 100mb restriction
+data/*.mat
+
+# Ignore Processed training data
+data/Processed/
+
+# Ignore cache and temp files
+--pycache--/
+*.pyc
+*.pkl
