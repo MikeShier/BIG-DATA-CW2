@@ -1,6 +1,11 @@
 # BIG-DATA-CW2
 ## Classifying digits from (0-9) from a 32x32RGB image using a loaded CNN model.
-CW2 with Abed and Jack
+CW2 with Abed and Jack 
+
+
+
+
+
 ## Introduction
 
 ## Business Objectives
