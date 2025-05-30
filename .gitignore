@@ -1,5 +1,6 @@
 # Ignore raw SVHN dataset as too large for githubs 100mb restriction
 data/*.mat
+data/*.npz
 
 # Ignore Processed training data
 data/Processed/
