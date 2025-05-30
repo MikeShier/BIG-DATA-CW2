@@ -52,28 +52,246 @@ A Convolutional Neural Network (CNN) is constructed using Keras' Sequential API.
 
 This cell repeats the dataset downsampling from cell 13, again slicing the first 10,000 and 2,000 samples for training and validation respectively. This repetition could be a remnant of iterative testing and should ideally be removed or consolidated.
 
-### 4. Model Evaluation
-The CNN model is compiled using the Adam optimizer and categorical cross-entropy loss, which is appropriate for multi-class classification. The training is initiated with a batch size of 64 and runs for 5 epochs. Both the training and validation sets are used, enabling the model to report progress on unseen data after each epoch. The resulting history object stores accuracy and loss metrics for later visualization
+---
+## 4. Model Evaluation
+The two convolutional nueral networks (CNNs) were trained nd evaluated on the SVHN (Street View House Numbers) Dataset.
 
-Finally, the script plots the training and validation accuracy and loss across the 5 training epochs. This provides visual insight into the model's learning dynamics. If the training and validation metrics diverge significantly, it may indicate overfitting. Conversely, steady improvements in both suggest that the model is learning effectively. These plots are crucial for diagnosing model behavior and guiding further tuning.
+**Model 1 - Baseline CNN**: introduces a simple two layer archetecture with dropout for regularization.
 
-This section imports libraries that are essential for evaluating model performance. classification_report and confusion_matrix from sklearn.metrics provide textual and matrix-based summaries of how well the model performs across all classes. seaborn is imported for high-level visualizations and is specifically used for creating an annotated heatmap of the confusion matrix. matplotlib.pyplot is again used to render the plots. These tools help convert raw predictions into understandable performance metrics.
+**Model 2 - Optimized CNN** : Introduces a deeper model using 3 convolutional layers and BatchNormalization for improved optimization.
 
-To compute classification metrics, the script first converts the one-hot encoded validation labels (y_val_cat) back to their original integer form using np.argmax(axis=1). This is applied to both the ground-truth labels and predictions. However, a small bug exists: both y_val_true and y_val_pred are derived from the same y_val_cat, which results in identical vectors. The model's actual predictions should be obtained using model.predict() on X_val_split, followed by argmax to extract the predicted class indices. As it stands, this code mistakenly compares the validation set against itself, artificially inflating performance metrics.
+### performance metrics
 
-A textual classification report is printed using classification_report() from sklearn. It provides metrics such as precision, recall, and F1-score for each digit class. These metrics offer a granular view of model accuracy per class, revealing any biases or performance weaknesses. However, due to the aforementioned bug, the report in its current form reflects perfect accuracy and must be corrected to reflect true model performance.
+| Metric            | Baseline CNN | Optimized CNN |
+|-------------------|--------------|----------------|
+| Validation Accuracy | 86%         | 89%             |
+| Macro F1-score    | 0.86         | 0.88            |
+| Weighted F1-score | 0.86         | 0.89            |
 
-A confusion matrix is created and visualized using seaborn.heatmap(). This matrix shows the number of correct and incorrect predictions for each class in a grid format, with the rows representing true labels and columns representing predicted labels. Annotated values within the matrix cells allow for quick identification of common misclassifications. However, because the prediction vector is flawed in this implementation, the confusion matrix is effectively a diagonal matrix, misleadingly indicating perfect classification. Once corrected, this matrix will be a valuable diagnostic tool for understanding model behavior.
-### 5. Prediction
 
-## Jupyter Notebook Structure
+### Observations
+The optimised CNN outperformed the baseline model across accuracy, recall and F1-score. Confustion matrices were created to show reduced missclasification on similar digits e.g.(3 vs 5, or 4 vs 9) for the optimized model, allowing visual predictions to highlight the models strong confidence on clean digits and uncertanty on blurred or missaligned samples. Thus both models demonstrating solid genralisation, but the optimized version was clearly more robust and stable compared to the baseline model.
 
-## Future Work
 
-## Libraries and Modules
+The CNN models are compiled using the Adam optimizer and categorical cross-entropy loss, which is appropriate for multi-class classification. The training for CNN(1) is initiated with a batch size of 64 and runs for 10 epochs. CNN(2) is then initiated with a batch size of 64 and runs for 15 epochs, Both the training and validation sets are used, enabling the models to report progress on unseen data after each epoch. The resulting history object stores accuracy and loss metrics for later visualization.
 
-## Unfixed Bugs
+#### This shows the CNN(1) Baseline model.
 
-## Acknowledgements and References
+            from tensorflow.keras.models import Sequential
+            from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 
-## Conclusions
+            model_base = Sequential([
+                Conv2D(32,(3, 3), activation = 'relu', input_shape = (32, 32, 3)),
+                MaxPooling2D(),
+
+                Conv2D(64,(3, 3), activation = 'relu'),
+                MaxPooling2D(),
+
+                Flatten(),
+                Dropout(0.5),
+                Dense(128, activation='relu'),
+                Dropout(0.3),
+                Dense(10, activation='softmax')
+
+            ])
+
+
+            model_base.compile(optimizer = 'adam', loss = 'categorical_crossentropy', metrics = ['accuracy'])
+
+            history_base = model_base.fit(
+                X_train_split, y_train_cat,
+                validation_data = (X_val_split, y_val_cat),
+                epochs = 10,
+                batch_size = 64
+                )
+
+#### This shows the CNN(2) Optimized model.
+                from tensorflow.keras.models import Sequential
+                from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
+
+                model_opt = Sequential([
+                    Conv2D(32, (3, 3), activation = 'relu', input_shape = (32, 32, 3)),
+                    BatchNormalization(),
+                    MaxPooling2D(),
+
+
+                    Conv2D(64, (3, 3), activation = 'relu'),
+                    BatchNormalization(),
+                    MaxPooling2D(),
+
+
+                    Conv2D(128, (3, 3), activation = 'relu'),
+                    BatchNormalization(),
+                    MaxPooling2D(),
+
+                    Flatten(),
+                    Dropout(0.4),
+                    Dense(128, activation = 'relu'),
+                    Dropout(0.3),
+                    Dense(10, activation = 'softmax')
+                ])
+
+
+
+                model_opt.compile(optimizer = 'adam', loss = 'categorical_crossentropy', metrics = ['accuracy'])
+
+                history_opt = model_opt.fit(
+                    X_train_split, y_train_cat,
+                    validation_data = (X_val_split, y_val_cat),
+                    epochs = 15,
+                    batch_size = 64,
+                    callbacks = [early_stop, checkpoint]
+                )
+
+
+Finally, the script plots the training and validation accuracy and compare the two models the baseline and the optimized model, this provides visual insight into the model's learning dynamics. If the training and validation metrics diverge significantly, it may indicate overfitting. Conversely, steady improvements in both suggest that the models are learning effectively but the optimized model overseaing the baseline model because of its optimization. These plots are crucial for diagnosing model behavior and guiding further tuning. the differnces between the acuracy and loss comparisson between the baseline and optimized model can be seen within the graph generated by the scrippt above.
+
+A confusion matrix is then generated and visualized using seaborn.heatmap(). This matrix shows the number of correct and incorrect predictions for each class in a grid format, with the rows representing true labels and columns representing predicted labels. Annotated values within the matrix cells allow for quick identification of common misclassifications. The matrixs will be generate for both models allowing a visual comparison to be availble to be able to determine the differnces in the accuracy in the models and how optimization has helped the accuracy improved.
+
+This section imports libraries that are essential for evaluating model performance. classification_report and confusion_matrix from sklearn.metrics provide textual and matrix-based summaries of how well the models perform across all classes. seaborn is imported for high-level visualizations and is specifically used for creating an annotated heatmap of the confusion matrix. matplotlib.pyplot is again used to render the plots. These tools help convert raw predictions into understandable performance metrics.
+
+                from sklearn.metrics import confusion_matrix, classification_report
+                import pandas as pd
+                import seaborn as sns
+                import matplotlib.pyplot as plt
+                import numpy as np
+
+                # Predicting and converting from one hot to label
+                y_val_true = np.argmax(y_val_cat, axis = 1)
+                y_val_pred_base = np.argmax(model_base.predict(X_val_split), axis = 1)
+
+
+                # Confusion Matrix
+                cm_base = confusion_matrix(y_val_true, y_val_pred_base)
+
+                plt.figure(figsize = (8, 6))
+                sns.heatmap(cm_base, annot = True, fmt = 'd', cmap = 'Blues', xticklabels= range(10), yticklabels= range(10))
+                plt.xlabel('Predicted')
+                plt.ylabel('True')
+                plt.title('Confusion Matrix - Baseline CNN')
+                plt.show()
+
+                # Classifcation report
+
+                report_base = classification_report(y_val_true, y_val_pred_base, output_dict = True)
+                report_df_base = pd.DataFrame(report_base).transpose().round(2)
+                report_df_base
+
+A classification repoprt of each confusion matrix is generated. using the code below generated the classifcation report for the CNN(1) model providing metrics such as precision, recall and F1-score for each digit class generated.These metrics offer a granular view of model accuracy per class, revealing any biases or performance weaknesses. However, due to the aforementioned bug, the report in its current form reflects perfect accuracy and must be corrected to reflect true model performance.
+
+The same process is then applied for the optimized model allowing for a comparison between the two models and clear representation as to what the accuracy differnce is between the two models and taking into consideration the factors of optimization. 
+
+                y_val_pred_opt = np.argmax(model_opt.predict(X_val_split), axis = 1)
+
+                # Confusion Matrix
+                cm_opt = confusion_matrix(y_val_true, y_val_pred_opt)
+
+                plt.figure(figsize = (8, 6))
+                sns.heatmap(cm_opt, annot = True, fmt = 'd', cmap = 'Blues', xticklabels= range(10), yticklabels= range(10))
+                plt.xlabel('Predicted')
+                plt.ylabel('True')
+                plt.title('Confusion Matrix - Optimised CNN')
+                plt.show()
+
+
+
+                # Classifcation report
+
+                report_opt = classification_report(y_val_true, y_val_pred_opt, output_dict = True)
+                report_df_opt = pd.DataFrame(report_opt).transpose().round(2)
+                report_df_opt
+---
+## 5. Prediction
+After training, both CNN models were evaluated on previously unseen data, The optimized moel was also used to generate predictions on a subset allowing for idividual test images to be generated. 
+
+### Visual Results
+A selection of 5-10 digits were dislayed with generated predicted labels, confidence scores and true labels allowing for strong confidence for clean centered digits. Missclassifications typically involved similar digits such as 4 and 5 being missclassified as 9 and 3. 
+
+                import matplotlib.pyplot as plt
+                from tensorflow.keras.models import load_model
+
+                # Loading the trained model
+                model = load_model('best_model.keras')
+
+                # Running predictions based on the test set
+                y_pred_probs = model.predict(X_test)
+                y_pred = np.argmax(y_pred_probs, axis = 1)
+
+                # Plotting predictions
+                plt.figure(figsize = (12, 4), dpi = 120)
+
+                for i in range(5):
+                    plt.subplot(1, 5, i + 1)
+                    plt.imshow(X_test[i], cmap = 'grey')
+                    plt.title(f"Pred: {y_pred[i]}\nConf: {y_pred_probs[i][y_pred[i]]:.2f}", fontsize = 10)
+                    plt.title(f"True: {y_test[i]}\nPred: {y_pred[i]}\nConf: {y_pred_probs[i][y_pred[i]]:.2f}", fontsize=10)
+                    plt.axis("off")
+
+                plt.suptitle("SVHN Model Predictions on Test Images", fontsize = 14)
+                plt.tight_layout()
+                plt.show()
+
+Along side the visual result an error analysis was carried out to show incorrect predictions were possible, errors of misclassification occured when discrepecies such as low-resolution, low contrast, blurry images and digits that were obscured or slightly overlapping, caused for an error to be presented. Thus generating an image that was hard to decipher. 
+
+            # Find a wrong pediction
+            wrong_idx = np.where(y_val_pred_opt != y_val_true)[0]
+
+            # Visulise first incorrect one to show that the model can get things wrong
+            i = wrong_idx[0]
+            plt.imshow(X_val_split[i])
+            plt.title(f"True: {y_val_true[i]}, pred: {y_val_pred_opt[i]}")
+            plt.axis("off")
+            plt.show()
+---
+### Jupyter Notebook Structure
+
+ This project is implemented in a single jupyter notebook file and organizedinto the following steps:
+ 1. Data Collection Downloaded from Urls on the SVHN Website
+ 2. preproces the Svhn Dataset
+ 3. Training of the CNN Models
+ 4. Evaluation of the Trained CNN Model
+ 5. Predictions
+ 6. Conclusion 
+
+
+---
+### Future Work
+
+1. Aditional archtechtures could be implemnted such as RedNet or MobileNet for etter feature extration.
+2. use data augmentation to improve model robustness on rotated or occluded digits
+3. perform certain hyper perameters tuning grid searches or byesian opimization.
+4. implement real-time digit ecognition using a webcam input and opencv
+5. depploy the model via a web app using things such as streamlit or flask to present it.
+---
+### Libraries and Modules
+
+Key libaries used in this project were:
+1. TensorFlow /Keras - Deep learning for building the CNN/
+2. NumPy - Effiecent array opperations/
+3. Pandas - data handeling for classification reports/
+4. MatPlotlib / seaborn - visulization(EDA, Confusion matrices, training curves)
+5. Scikit-learn - Evaluation metrics for classification reports and confusion matrices.
+6. Scipy.io - for loading .mat SVHN files.
+
+---
+### Unfixed Bugs
+
+1. Occasonally large .npz data chunks can cause memory warnings due tolimited RAM systems for full operation to take place.
+2. classification reports cansometimes crash the kernal if run on the entire test set without sampeling.
+3. some minor prediction errors occur on extreamly noisy digits this is common on the SVHN data set due to real world image noise.
+4. the kernal can someties class when allowing batch size to be above certain values 10,000+ this can cause an overload on the kernal causing it to be killed.
+
+---
+### Acknowledgements and References
+1. SVHN Dataset: http://ufldl.stanford.edu/housenumbers/
+
+
+### Conclusions
+This project shows how minor enhancemnts such as BatchNormilization and increased depth can significcantly improve digit classification interpreted by the SVHN Dataset. The optimized CNN outperforms the baseline in accuracy and generalization.
+
+The optimized model achieved:
+1. Higher accuracy (89%) that the baseline (86%)
+2. better generalization across noisy data
+3. Reduced error rates on visually similar digits. 
+
+The workflow was fully executed on a single notebook with organized code, structured markdowns and visual outputs, making the project reproducable and extendable.
